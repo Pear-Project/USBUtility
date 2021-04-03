@@ -1,0 +1,36 @@
+' Gambas class file
+
+Private sSDFormatResult As String
+Private sDrives As String[]
+
+Public Sub Form_Open()
+  Try Dir("/root", "*", gb.File)
+  GetSDDrives()
+End
+''''''''''''''''''''''''''''''''''''''''''''Launch data'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Public Sub GetSDDrives()
+Dim sData, sLine, sUSB As String
+Dim sDriveData, sUSBData As String[]
+
+  Shell "ls -l /dev/disk/by-path/*usb* | grep -v \"part\" | awk '{print $NF}' | awk -F \"/\" '{print $NF}'" To sUSB ''''''VITAL FUNCTION!!!''''''''
+  Shell "lsblk" To sData
+  sUSBData = Split(sUSB, gb.NewLine)
+  sDrives = Split(sData, gb.NewLine)
+  For Each sLine In sDrives
+    If sLine <> "" Then
+      sDriveData = Split(sLine, " ", "", True)
+      If sDriveData[5] = "disk" Then
+        If sUSBData.Exist(sDriveData[0]) Then
+            If sDriveData[4] = "0" Then
+              cboSDCard.Add(sDriveData[0] & " - " & sDriveData[3])
+              Shell "pkexec hdparm -I /dev/" & sDriveData[0] To TextArea1.Text
+            Endif
+        Endif
+      Endif
+    Endif
+  Next
+End
+
+Public Sub btnExit_Click()
+  infoDisk.Close
+End

@@ -1,0 +1,198 @@
+' Gambas class file
+
+Private sSDFormatResult As String
+Private sDrives As String[]
+
+Public Sub Form_Open()
+  Try Dir("/root", "*", gb.File)
+  PictureBox1.Show
+  ComboBox1.Add("MS-DOS (FAT32)")
+  ComboBox1.Add("ExFAT")
+  ComboBox1.Add("NTFS")
+  ComboBox1.Add("EXT4")
+  ComboBox2.Add("Master Boot Record")
+  GetSDDrives()
+  Me.Center
+End
+
+Public Function isValidLabelName(sName As String) As Boolean
+Dim sValid As String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-_"
+Dim x As Integer
+
+  For x = 1 To Len(sName)
+    If Not InStr(sValid, Mid$(sName, x, 1)) Then
+      Return False
+    Endif
+  Next
+  Return True
+End
+
+Public Sub btnBegin_Click()
+Dim sPartitions, sMountPoints As String[]
+Dim sDrive, sDiskLabel As String
+Dim iIndex As Integer
+  btnBegin.Enabled = False
+  btnExit.Enabled = False
+  
+  sDiskLabel = Trim$(UCase$(txtDiskName.text))
+  If Not isValidLabelName(sDiskLabel) Then
+    Message.Error("Invalid Volume Label!", "OK")
+    Return
+  Endif
+  
+  PictureBox1.Visible = False
+  WorkForm.Refresh
+  Wait
+  sSDFormatResult = ""
+  sDrive = cboSDCard.text
+  If sDrive = "" Then
+    Message.Error("No SD Or USB Disk Selected!", "OK")
+    PictureBox1.Visible = True
+    btnBegin.Enabled = False
+    btnExit.Enabled = True
+    Return
+  Else
+    iIndex = InStr(sDrive, " - ")
+    sDrive = Left$(sDrive, iIndex - 1)
+    sPartitions = GetPartitions(sDrive)
+    sMountPoints = GetMountPoints(sDrive)
+  Endif
+  '''''''''''''''''''''''''''''''Format funcion''''''''''''''''''''''''''''''''''''''''''''''''''''
+  iIndex = Message.Question("Format Drive... Are You Sure?", "Yes", "No")
+  If iIndex <> 1 Then
+    PictureBox1.Visible = True
+    btnBegin.Enabled = True
+    btnExit.Enabled = True
+    Return
+  Endif
+  For iIndex = 0 To sPartitions.Max
+    Shell "pkexec umount '/dev/" & sPartitions[iIndex] & "'" Wait
+    Shell "pkexec rmdir '" & sMountPoints[iIndex] & "'" Wait
+    If sPartitions[iIndex] <> "" Then
+      Shell "pkexec /sbin/parted '/dev/" & sDrive & "' rm " & Right$(sPartitions[iIndex], Len(sPartitions[iIndex]) - Len(sDrive)) Wait
+    Endif
+  Next
+  If sDiskLabel = "" Then 
+    sDiskLabel = "NewVolume"
+  Endif
+  ''''''''''''''''''''''''''''''''''''''''''''MAIN FUNCTION''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+  If ComboBox1.Text = "MS-DOS (FAT32)" Then
+  Shell "pkexec /usr/sbin/parted /dev/" & sDrive & " --script mklabel msdos" Wait
+  Shell "pkexec /usr/sbin/parted /dev/" & sDrive & " --script mkpart primary fat32 1MiB 100%" Wait '''''''''FAT 32 (Restult: Working!)
+  Shell "pkexec mkfs.vfat -F32 -n " & sDiskLabel & " /dev/" & sDrive & "1" Wait
+  Else If ComboBox1.Text = "ExFAT" Then
+    Shell "pkexec /usr/sbin/parted /dev/" & sDrive & " --script mklabel msdos" Wait
+    Shell "pkexec /usr/sbin/parted /dev/" & sDrive & " --script mkpart primary ext4 0% 100%" Wait ''''''''''ExFat  (Result: Working!)
+    Shell "pkexec mkfs.exfat -n " & sDiskLabel & " /dev/" & sDrive & "1" Wait
+    Else If ComboBox1.Text = "NTFS" Then
+      Shell "pkexec /usr/sbin/parted /dev/" & sDrive & " --script mklabel gpt" Wait
+      Shell "pkexec /usr/sbin/parted /dev/" & sDrive & " --script mkpart primary NTFS 1MiB 100%" Wait ''''''NTFS   (Result:sometimes Work)
+      Shell "pkexec mkntfs -Q -v -F -L" & sDiskLabel & " /dev/" & sDrive & "1"
+      Else If ComboBox1.Text = "EXT4" Then
+        Shell "pkexec /usr/sbin/parted /dev/" & sDrive & " --script mklabel msdos" Wait
+        Shell "pkexec /usr/sbin/parted /dev/" & sDrive & " --script mkpart primary ext4 0% 100%" Wait ''''''EXT4   (Result: Working!)
+        Shell "yes | pkexec mkfs -t ext4 /dev/" & sDrive & "1" Wait
+        Endif
+  RefreshSDDrives()
+  sPartitions = GetPartitions(sDrive)
+  sMountPoints = GetMountPoints(sDrive)
+    
+  'Verify format info
+  Shell "pkexec /sbin/parted /dev/" & sDrive & " --script print" To sSDFormatResult
+  Wait
+  PictureBox1.Visible = True
+  btnBegin.Enabled = True
+  btnExit.Enabled = True
+  Message.Info("USB Disk erased", "ok")
+End
+
+'''''''''''''''''''''''''''''''''''''''''''Refresh Function''''''''''''''''''''''''''''''''''
+Public Sub RefreshSDDrives()
+Dim sData As String
+  
+  Shell "lsblk" To sData
+  sDrives = Split(sData, gb.NewLine)
+End
+
+Public Function GetPartitions(sDrive As String) As String[]
+Dim sPartitions As New String[]
+Dim sDriveItem As String
+Dim x, y, z, a As Integer
+
+  For x = 1 To sDrives.max
+    If InStr(sDrives[x], sDrive & " ") = 1 Then
+      For y = (x + 1) To sDrives.max
+        z = InStr(sDrives[y], sDrive)
+        If z > 0 Then
+          a = InStr(sDrives[y], " ", z)
+          sDriveItem = Mid$(sDrives[y], z, a - z)
+          sPartitions.Add(sDriveItem)
+        Endif
+      Next
+      If sPartitions.Count = 0 Then
+        sPartitions.Add(sDrive)
+      Endif
+    Endif
+  Next
+  Return sPartitions
+End
+''''''''''''''''''''''''''''''''''''''''''''''''Getting mountpoints function'''''''''''''''''''''''''''''''
+Public Function GetMountPoints(sDrive As String) As String[]
+Dim sMountPoints As New String[]
+Dim sDriveItem As String
+Dim x, y, z, a As Integer
+
+  For x = 1 To sDrives.max
+    If InStr(sDrives[x], sDrive & " ") = 1 Then
+      If InStr(sDrives[x], " disk ") Then
+        If InStr(sDrives[x], " /") Then
+          a = InStr(sDrives[x], " disk ")
+          sDriveItem = Mid$(sDrives[x], a + 6, Len(sDrives[x]) - (a + 5))
+          sMountPoints.Add(sDriveItem)
+          Return sMountPoints
+        Endif
+      Endif
+      For y = (x + 1) To sDrives.max
+        z = InStr(sDrives[y], sDrive)
+        If z > 0 Then
+          a = InStr(sDrives[y], " part ", z)
+          sDriveItem = Mid$(sDrives[y], a + 6, Len(sDrives[y]) - (a + 5))
+          sMountPoints.Add(sDriveItem)
+        Endif
+      Next
+    Endif
+  Next
+  Return sMountPoints
+End
+''''''''''''''''''''''''''''''''''''''''''''Launch data'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Public Sub GetSDDrives()
+Dim sData, sLine, sUSB As String
+Dim sDriveData, sUSBData As String[]
+Dim usage As String
+Dim exact As String
+Dim avail As String
+Dim mpoint As String
+Dim fstypedata As String
+ Shell "ls -l /dev/disk/by-path/*usb* | grep -v \"part\" | awk '{print $NF}' | awk -F \"/\" '{print $NF}'" To sUSB
+  Shell "lsblk" To sData
+  sUSBData = Split(sUSB, gb.NewLine)
+  sDrives = Split(sData, gb.NewLine)
+  For Each sLine In sDrives
+    If sLine <> "" Then
+      sDriveData = Split(sLine, " ", "", True)
+      If sDriveData[5] = "disk" Then
+        If sUSBData.Exist(sDriveData[0]) Then
+            If sDriveData[4] = "0" Then
+              cboSDCard.Add(sDriveData[0] & " - " & sDriveData[3])
+              Label3.Text = "Erase " & (sDriveData[0] & " USB Media?")
+              TextLabel4.Text = "Erasing " & "'" & (sDriveData[0] & "'" " will delete all data stored on it and can't be undone. Provide a Name, choose a filesystem and click Erase to proceed")
+              Endif
+        Endif
+      Endif
+    Endif
+  Next
+End
+
+Public Sub btnExit_Click()
+  dialogF.Close
+End

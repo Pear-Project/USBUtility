@@ -1,0 +1,85 @@
+# Gambas Form File 3.0
+
+{ Form Form
+  MoveScaled(0,0,78,39)
+  Text = ("🖴 Options")
+  Picture = Picture["USBUtility.png"]
+  { IconView1 IconView
+    MoveScaled(-1,0,79,39)
+    Border = False
+  }
+  { PictureBox1 PictureBox
+    MoveScaled(3,3,11,10)
+    Picture = Picture["drive.png"]
+    Stretch = True
+  }
+  { Label3 Label
+    MoveScaled(16,1,57,8)
+    Font = Font["Droid Sans Fallback,Bold,+2"]
+    Text = ("USB Medium not found")
+  }
+  { btnBegin Button
+    MoveScaled(62,33,12,3)
+    Background = &H414142&
+    Foreground = &HE0E0E0&
+    Text = ("Erase")
+  }
+  { btnExit Button
+    MoveScaled(46,33,12,3)
+    Background = &H414142&
+    Foreground = &HE0E0E0&
+    Text = ("Cancel")
+  }
+  { btnBegin2 Button
+    MoveScaled(101,0,5,3)
+  }
+  { PictureBox3 PictureBox
+    MoveScaled(102,0,4,3)
+    Picture = Picture["info-logo-png.png"]
+    Mode = PictureBox.Contain
+  }
+  { TextLabel2 TextLabel
+    MoveScaled(101,3,24,4)
+    Font = Font["-2"]
+    Text = ("About")
+  }
+  { cboSDCard ComboBox
+    MoveScaled(90,65,28,4)
+    ReadOnly = True
+  }
+  { TextLabel4 TextLabel
+    MoveScaled(16,8,46,13)
+  }
+  { Label2 Label
+    MoveScaled(7,18,7,4)
+    Text = ("Name:")
+    Alignment = Align.Right
+  }
+  { txtDiskName TextBox
+    MoveScaled(15,18,53,3)
+    MaxLength = 11
+    Border = False
+  }
+  { TextLabel1 TextLabel
+    MoveScaled(6,22,8,4)
+    Text = ("Format:")
+    Alignment = Align.Right
+  }
+  { TextLabel3 TextLabel
+    MoveScaled(5,26,9,3)
+    Text = ("Scheme:")
+    Alignment = Align.Right
+  }
+  { Button1 Button
+    MoveScaled(4,33,17,3)
+    Text = ("Security Options") & "..."
+  }
+  { ComboBox1 ComboBox
+    MoveScaled(15,22,53,3)
+    Border = False
+  }
+  { ComboBox2 ComboBox
+    MoveScaled(15,26,53,3)
+    Border = False
+  }
+}

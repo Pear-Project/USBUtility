@@ -1,0 +1,161 @@
+' Gambas class file
+
+Private sSDFormatResult As String
+Private sDrives As String[]
+''''''''''''''''''''''''''''FIRST THINGS FIRST''''''''''''''''''''''''''''''
+Public Sub Form_Open()
+  Label2.Hide
+  txtDiskName.Hide
+  pg_space.Pulse = False
+  pg_space.Value = 0 / 100
+  GetSDDrives()
+  Me.Center
+End
+
+Public Function isValidLabelName(sName As String) As Boolean
+Dim sValid As String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+Dim x As Integer
+
+  For x = 1 To Len(sName)
+    If Not InStr(sValid, Mid$(sName, x, 1)) Then
+      Return False
+    Endif
+  Next
+  Return True
+End
+
+Public Sub btnBegin_Click()
+  dialogF.Show
+End
+'''''''''''''''''''''''''''''''''''''''''''Refresh Function''''''''''''''''''''''''''''''''''
+Public Sub RefreshSDDrives()
+Dim sData As String
+  
+  Shell "lsblk" To sData
+  sDrives = Split(sData, gb.NewLine)
+End
+
+Public Function GetPartitions(sDrive As String) As String[]
+Dim sPartitions As New String[]
+Dim sDriveItem As String
+Dim x, y, z, a As Integer
+
+  For x = 1 To sDrives.max
+    If InStr(sDrives[x], sDrive & " ") = 1 Then
+      For y = (x + 1) To sDrives.max
+        z = InStr(sDrives[y], sDrive)
+        If z > 0 Then
+          a = InStr(sDrives[y], " ", z)
+          sDriveItem = Mid$(sDrives[y], z, a - z)
+          sPartitions.Add(sDriveItem)
+        Endif
+      Next
+      If sPartitions.Count = 0 Then
+        sPartitions.Add(sDrive)
+      Endif
+    Endif
+  Next
+  Return sPartitions
+End
+''''''''''''''''''''''''''''''''''''''''''''''''Getting mountpoints function'''''''''''''''''''''''''''''''
+Public Function GetMountPoints(sDrive As String) As String[]
+Dim sMountPoints As New String[]
+Dim sDriveItem As String
+Dim x, y, z, a As Integer
+
+  For x = 1 To sDrives.max
+    If InStr(sDrives[x], sDrive & " ") = 1 Then
+      If InStr(sDrives[x], " disk ") Then
+        If InStr(sDrives[x], " /") Then
+          a = InStr(sDrives[x], " disk ")
+          sDriveItem = Mid$(sDrives[x], a + 6, Len(sDrives[x]) - (a + 5))
+          sMountPoints.Add(sDriveItem)
+          Return sMountPoints
+        Endif
+      Endif
+      For y = (x + 1) To sDrives.max
+        z = InStr(sDrives[y], sDrive)
+        If z > 0 Then
+          a = InStr(sDrives[y], " part ", z)
+          sDriveItem = Mid$(sDrives[y], a + 6, Len(sDrives[y]) - (a + 5))
+          sMountPoints.Add(sDriveItem)
+        Endif
+      Next
+    Endif
+  Next
+  Return sMountPoints
+End
+''''''''''''''''''''''''''''''''''''''''''''Launch data'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Public Sub GetSDDrives()
+Dim sData, sLine, sUSB As String
+Dim sDriveData, sUSBData As String[]
+Dim usage As String
+Dim exact As String
+Dim avail As String
+Dim mpoint As String
+Dim fstypedata As String
+  Shell "ls -l /dev/disk/by-path/*usb* | grep -v \"part\" | awk '{print $NF}' | awk -F \"/\" '{print $NF}'" To sUSB
+  Shell "lsblk" To sData
+  sUSBData = Split(sUSB, gb.NewLine)
+  sDrives = Split(sData, gb.NewLine)
+  For Each sLine In sDrives
+    If sLine <> "" Then
+      sDriveData = Split(sLine, " ", "", True)
+      If sDriveData[5] = "disk" Then
+        If sUSBData.Exist(sDriveData[0]) Then
+            If sDriveData[4] = "0" Then
+              cboSDCard.Add(sDriveData[0] & " - " & sDriveData[3])
+              cboo.text = cboSDCard.text
+              Label3.Text = (sDriveData[0] & " USB Media") '''''''''''''''''''working lmao
+              Label4.Text = (sDriveData[3] & "B USB External Physical Disk")
+              Label9.Text = (sDriveData[3] & "B")
+              Shell "df --output=pcent /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To usage
+              Shell "df -h  --output=used /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To exact
+              Shell "df -h  --output=avail /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To avail '''''''''''''''''''
+              Shell "df -h  --output=source /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To mpoint
+              Shell "df -h  --output=fstype /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To fstypedata
+              TextLabel4.text = exact & "B"
+              TextLabel5.Text = avail & "B"
+              lbl_capacity.Text = (sDriveData[3] & "B")
+              lbl_mountpoint.Text = mpoint
+              lbl_fstype.Text = fstypedata
+              lbl_path.Text = "/dev/" & (sDriveData[0])
+              lbl_available.Text = avail & "B"
+              lbl_used.Text = exact
+              Print Val(usage)
+              pg_space.value = Val(usage) / 100
+            Endif
+        Endif
+      Endif
+    Endif
+  Next
+End
+
+Public Sub btn_refresh_Click()
+  GetSDDrives()
+End
+
+Public Sub PictureBox3_MouseDown()
+  infoDisk.Show
+End
+
+Public Sub PictureBox7_MouseDown()
+  dialogF.Show
+End
+
+
+Public Sub btn_about_Click()
+  About.Show
+End
+
+Public Sub pic_about_MouseDown()
+  About.Show
+End
+
+Public Sub pic_erase_MouseDown()
+  dialogF.Show
+End
+
+Public Sub pic_erase3_MouseDown()
+  GetSDDrives()
+End

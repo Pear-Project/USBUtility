@@ -1,0 +1,29 @@
+# Gambas Form File 3.0
+
+{ Form Form
+  MoveScaled(0,0,36,39)
+  Icon = Picture["USBUtility.png"]
+  { PictureBox1 PictureBox
+    MoveScaled(10,2,15,15)
+    Picture = Picture["USBUtility.png"]
+    Mode = PictureBox.Contain
+  }
+  { lbl_appname Label
+    MoveScaled(5,18,24,4)
+    Font = Font["SF Mono"]
+    Text = ("Disk utility")
+    Alignment = Align.Center
+  }
+  { lbl_version Label
+    MoveScaled(5,20,24,4)
+    Font = Font["-1"]
+    Foreground = Color.Gray
+    Text = ("v11 (22. I. 2021)")
+    Alignment = Align.Center
+  }
+  { Label1 Label
+    MoveScaled(0,36,15,3)
+    Font = Font["-3"]
+    Text = ("Copyright 2021\nAlexandru Balan")
+  }
+}
