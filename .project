@@ -13,6 +13,7 @@ Language=en_US
 KeepDebugInfo=0
 ControlPublic=1
 ModulePublic=1
+SourcePath=/home/pear/Desktop
 Maintainer=Alexandru Balan
 Vendor=PearProject
 Address=pear.ceo421@gmail.com

@@ -30,7 +30,6 @@ End
 '''''''''''''''''''''''''''''''''''''''''''Refresh Function''''''''''''''''''''''''''''''''''
 Public Sub RefreshSDDrives()
 Dim sData As String
-  
   Shell "lsblk" To sData
   sDrives = Split(sData, gb.NewLine)
 End
@@ -109,7 +108,7 @@ Dim fstypedata As String
               Label3.Text = (sDriveData[0] & " USB Media") '''''''''''''''''''working lmao
               Label4.Text = (sDriveData[3] & "B USB External Physical Disk")
               Label9.Text = (sDriveData[3] & "B")
-              Shell "df --output=pcent /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To usage
+              Shell "df -h --output=pcent /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To usage
               Shell "df -h  --output=used /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To exact
               Shell "df -h  --output=avail /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To avail '''''''''''''''''''
               Shell "df -h  --output=source /dev/" & (sDriveData[0]) & "1" & " | awk -F'%' 'NR==2{print $1}'" To mpoint
