@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=11.0
+Name=USB Utility
+Comment=Format your USB or SD card :)
+Exec=usbutil
+Icon=/usr/share/icons/usb-utility.png
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=System;
